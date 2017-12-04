@@ -3,7 +3,7 @@
 
 //#pragma once
 
-#define BEHAVIOR
+//#define BEHAVIOR
 
 #include "aTransform.h"
 

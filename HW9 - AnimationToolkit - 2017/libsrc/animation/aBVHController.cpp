@@ -53,17 +53,33 @@ void BVHController::setActor(AActor* actor)
 	mSkeleton = mActor->getSkeleton();
 }
 
+// Update transforms at each Skeleton joint given spline motion data in mRootMotion and mMotion for value of time.
+// root get translated, all the other joints get a local change in rotation.
+// call the skeleton update to update the skeleton.
 
 void BVHController::update(double time)
 {
 	ASkeleton* skeleton = mActor->getSkeleton();
-
-	// TODO: Update transforms at each Skeleton joint given spline motion data in mRootMotion and mMotion for value of time. 
-
-
-
-
-
+        vec3 currentRootLocation { mRootMotion.getValue(time)};
+	// rootnode;
+	AJoint* currentJoint  { skeleton ->getRootNode()};
+	// for the root expect that the parent is the world, so root 
+	// to global is the same as root to parent.
+	currentJoint -> setLocalTranslation(currentRootLocation);
+	// for every joint get the ASplineQuat for it,
+	// do a cubic interpolation in quat space,
+	// get a matrix,
+	// update the currentJoints rotation matrix with respect to 
+	// its parent.
+	for (size_t i = 0; i < skeleton->getNumJoints(); ++i) {
+		currentJoint = skeleton -> getJointByID(i);
+		ASplineQuat quatS { mMotion[i]};
+		quat  currentQuat { quatS.getCachedValue(time)};
+		mat3   currentMat;
+		currentMat.FromQuaternion(currentQuat);
+		currentJoint -> setLocalRotation(currentMat);
+	}
+        skeleton -> update();
 }
 
 bool BVHController::load(const std::string& filename)

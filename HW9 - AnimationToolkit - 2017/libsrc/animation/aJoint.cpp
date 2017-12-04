@@ -199,17 +199,25 @@ const mat3& AJoint::getGlobalRotation() const
 {
 	return mLocal2Global.m_rotation;
 }
-
+// this will update the global transformation by using the current local transformation
+// and the global transformation of the parent.
+//
+// Compute mLocal2Global for the joint, which allows vectors to be transformed from local coordinates to world coordinate
+// Also update mLocal2Global for each of the children. 
+// When the children get updated, the parent is already updated so their transforms will be correct.
+// This is also recursive because the call to updateTransform will call the children's children and will 
+// not return until all the children have been transformed.
 void AJoint::updateTransform()
 {
-	mLocal2Global = ATransform();
-
-	// TODO: Compute mLocal2Global for the joint, which allows vectors to be transformed from local coordinates to world coordinates
-
-
-	// TODO: Also update mLocal2Global for each of the children
-
-
+        if (mParent != nullptr) {
+	     mLocal2Global = mParent->getLocal2Global() * mLocal2Parent;
+	}
+	else { // root node case
+		mLocal2Global = mLocal2Parent;
+	}
+	for (AJoint* child : mChildren) {
+		child -> updateTransform();
+	}
 }
 
 void AJoint::Attach(AJoint* pParent, AJoint* pChild)

@@ -4,35 +4,45 @@
 
 #include "aSpark.h"
 #include <math.h>
-
+#include <algorithm>
+#include <random>
 #ifndef GRAVITY
 #define GRAVITY 9.8f
 #endif
-
+static const double RepellerStrength { 100000};
+static const double AttractorStrength {100000};
+static const double DragStrength   {20};
+static const double windStrength { 10};
+//coefficients of restitution equals 0.25
+static const double M_COR_Strength { 0.25};
+static const double randomStrength { 3000};
+// particles within minDistance of attractor/repeller do not get 
+// an infinite force
+static const double minDistance { 20};
+static std::default_random_engine  dre;
+static std::uniform_real_distribution<double>  unireal(-1, 1);
+static int RandomForceInterval {10};
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-ASpark::ASpark()
-{
-	//coefficients of restitution equals 0.25
-	m_COR = 0.25f;
-	m_mass = 1.0;
-}
+ASpark::ASpark(): m_COR{M_COR_Strength}, AttractorScale{ AttractorStrength},
+	      RepellerScale {  RepellerStrength}, dragScale { DragStrength},
+	      windScale { windStrength}, randomScale{randomStrength}, count {0}
+{}
 
-ASpark::ASpark(float* color): AParticle()
+ASpark::ASpark(float* color): ASpark()
 {
 	for (int i = 0; i < 3; i++)
 		m_color[i] = color[i];
  
-	//coefficients of restitution equals 0.25
-	m_COR = 0.25f;
 }
 
 ASpark::~ASpark()
 {
 
 }
+
 
 //Set attractor position
 void ASpark::setAttractor(vec3 position)
@@ -108,58 +118,65 @@ void ASpark::computeForces(int extForceMode)
 
 	// gravity force
 	addForce(m_mass*m_gravity);
+        ++count;
 
-
-	// wind force
+	// wind force added in
 	if (extForceMode & WIND_ACTIVE)
 	{
-		//TODO: Add your code here
-
-
-	
-
+		addForce(windScale * m_windForce);
 	}
-
+        // drag force is opposite to velocity
 	if (extForceMode & DRAG_ACTIVE)
 	{
-		//TODO: Add your code here
-
-
-;
+		
+		addForce( - dragScale * m_Vel);
 	}
 
 
 	// attractor force
 	if (extForceMode & ATTRACTOR_ACTIVE)
 	{
-		//TODO: Add your code here
-
-
-	
+              vec3 forceDir = m_attractorPos - m_Pos;
+	      float length = std::max(forceDir.Length(), 
+			      minDistance);
+	      float invLength = 1/length;
+	      forceDir *= AttractorScale * m_mass * invLength *
+		      invLength * invLength;
+	      addForce(forceDir);
 	}
-
 	// repeller force
 	if (extForceMode & REPELLER_ACTIVE)
 	{
-		//TODO: Add your code here
-
-
+              vec3 forceDir = m_Pos  - m_repellerPos;
+	      float length = std::max(forceDir.Length(), 
+			      minDistance);
+	      float invLength = 1/length;
+	      forceDir *= RepellerScale * m_mass * invLength *
+		      invLength * invLength;
+	      addForce(forceDir);
 	}
 
 	// random force
-	if (extForceMode & RANDOM_ACTIVE)
+	if ( (extForceMode & RANDOM_ACTIVE) && (count % RandomForceInterval == 0))
 	{
-		//TODO: Add your code here
-
+          vec3 randomForce( randomScale * unireal(dre), 
+			    randomScale * unireal(dre),
+			    randomScale * unireal(dre));
+	  addForce(randomForce);
 
 
 	}
 
 }
-
+// reverse the y velocity if the position is negative; then scale 
+// the velocity my M_COR to account for collision losses.
 void ASpark::resolveCollisions()
 // resolves collisions of the spark with the ground
 {
-	//TODO: Add  code here that reverses the y value of the spark velocity vector when the y position value of the spark is < 0
+	//Added code here that reverses the y value of the spark velocity vector when the y position value of the spark is < 0
+	if ( m_Pos[1] < 0) {
+		m_state[4] = - m_COR * m_state[4];
+		  m_Vel[1] = - m_COR *   m_Vel[1];
+	}
 
 }
