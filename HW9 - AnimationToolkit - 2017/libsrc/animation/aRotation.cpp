@@ -1,6 +1,6 @@
 #include "aRotation.h"
 #include <algorithm>
-
+#include <vector>
 #define IS_ZERO(x) ((x)>-EPSILON && (x)<EPSILON)
 #define SGN(x) (x>=0?1.0:-1.0)
 
@@ -218,10 +218,38 @@ bool mat3::ToEulerAngles(RotOrder order, vec3& angleRad) const
 			break;
 
 		case YXZ:
-			//TODO: student implementation for computing Euler angles from a rotation matrix with an YXZ order of rotation goes here
-			angleRad = vec3(0.0, 0.0, 0.0);
-			result = false;
-
+			//following the derivation in Homework 1 YXZ;
+			// if angle[VX] = +/- pi/2 then the z and y axes 
+			// are the same. so either angle could be used.
+			// formally the rest of the coefficients are either
+			// the sum or difference of the other two angles;
+			// in all cases the det = 1 as it has to be.
+			// first col of matrix if sin(vx) = +/- 1 is 
+			// cos(vy), 0, -sin(vy) when vz = 0
+			angleRad[VX] = -asin(mM[VY][VZ]);
+			if (angleRad[VX] > -M_PI_2 + EPSILON)
+			{
+				if (angleRad[VX] < M_PI_2 - EPSILON)
+				{
+					angleRad[VY] = atan2(mM[VX][VZ], mM[VZ][VZ]);
+					angleRad[VZ] = atan2(mM[VY][VX], mM[VY][VY]);
+					result = true;
+				}
+				else
+				{
+					// WARNING.  Not a unique solution.
+					angleRad[VZ] = 0.0f;
+					angleRad[VY] = atan2(-mM[VZ][VX], mM[VX][VX]);
+					result = false;
+				}
+			}
+			else
+			{
+				// WARNING.  Not a unique solution.
+				angleRad[VZ] = 0.0f;
+				angleRad[VY] = atan2(-mM[VZ][VX], mM[VX][VX]);
+				result = false;
+			}
 			break;
 	}
 	return result;
@@ -263,9 +291,9 @@ mat3 mat3::FromEulerAngles(RotOrder order, const vec3& anglesRad)
 		break;
 
 	case YXZ:
-		//TODO: student implementation for computing rotation matrix for YXZ order of rotation goes here
-		m.Identity();
-
+		m = mat3::Rotation3D(axisY, anglesRad[VY])
+			* mat3::Rotation3D(axisX, anglesRad[VX])
+			* mat3::Rotation3D(axisZ, anglesRad[VZ]);
 		break;
 
 
@@ -1038,48 +1066,110 @@ void quat::Zero()
 
 #define Q_EST(a, b, c) 0.25*(1 + a + b + c)
 #define Q_MAX(a, b, c, d) std::max(a, std::max(b, std::max(c, d))) 
-
+double sumTwo(const mat3& rot, int i, int j)
+{
+	return rot[i][j] + rot[j][i];
+}
+double diffTwo(const mat3& rot, int i, int j)
+{
+	return rot[i][j] - rot[j][i];
+}
 void quat::FromRotation (const mat3& rot)
 {
-	mQ[VW] = 0.0; mQ[VX] = 1.0; mQ[VY] = 0.0;  mQ[VZ] = 0.0;
+   //start into a quaternion;
+   //R is (3 x 3)
+   // follow Buss, Graphics p 304
 
-	//TODO: student implementation for converting from rotation matrix to quat goes here
+   double T{ rot[VX][VX] + rot[VY][VY] + rot[VZ][VZ] };
+   typedef std::pair<double, size_t> pr;
+   pr pr1 = pr(T, VW);
+   pr pr2 = pr(rot[VX][VX], VX);
+   pr pr3 = pr(rot[VY][VY], VY);
+   pr pr4 = pr(rot[VZ][VZ], VZ);
+   //% s allows us to choose the largest divisor
+   pr maxpair = std::max({ pr1, pr2, pr3, pr4 });
+   double factor;
 
+   switch (maxpair.second) {
+   case VW:
+	   mQ[VW] = 0.5 * std::sqrt(maxpair.first + 1);
+	   factor = 1 / (4 * mQ[VW]);
+	   mQ[VX] = diffTwo(rot, VZ, VY) * factor;
+	   mQ[VY] = diffTwo(rot, VX, VZ) * factor;
+	   mQ[VZ] = diffTwo(rot, VY, VX) * factor;
+	   break;
+   case VX:
+	   mQ[VX] = 0.5 * std::sqrt(2 * maxpair.first - T + 1);
+	   factor = 1 / (4 * mQ[VX]);
+	   mQ[VW] = diffTwo(rot, VZ, VY) * factor;
+	   mQ[VY] = sumTwo(rot, VY, VX) * factor;
+	   mQ[VZ] = sumTwo(rot, VX, VZ) * factor;
+	   break;
+   case VY:
+	   mQ[VY] = 0.5 * std::sqrt(2 * maxpair.first - T + 1);
+	   factor = 1 / (4 * mQ[VY]);
+	   mQ[VW] = diffTwo(rot, VX, VZ) * factor;
+	   mQ[VX] = sumTwo(rot, VY, VX) * factor;
+	   mQ[VZ] = sumTwo(rot, VZ, VY) * factor;
+	   break;
+   case VZ:
+	   mQ[VZ] = 0.5 * std::sqrt(2 * maxpair.first - T + 1);
+	   factor = 1 / (4 * mQ[VZ]);
+	   mQ[VW] = diffTwo(rot, VY, VX) * factor;
+	   mQ[VX] = sumTwo(rot, VX, VZ) * factor;
+	   mQ[VY] = sumTwo(rot, VZ, VY) * factor;
+	   break;
+   default:
+	   throw std::runtime_error("No case");
+   }
    Normalize();
 }
 
+
 quat quat::Slerp(const quat& q0, const quat& q1, double u)
 {
-   quat q = q0;
-   //TODO: student implemetation of Slerp goes here
-
+	double cosOmega{ Dot(q0, q1) };
+	double Omega{ acos(cosOmega) };
+	double OneOverSinOmega{ 1 / sin(Omega) };
+	double sinOmegau{ sin(Omega * u) }; // reuse variable
+	double sinOmega1mu{ sin((1 - u) * Omega) };
+	quat q { sinOmega1mu * OneOverSinOmega * q0 +
+		sinOmegau * OneOverSinOmega *q1 };
     return q.Normalize();
 }
+//SDouble will be the reflection on the unit sphere
 quat quat::SDouble(const quat& a, const quat& b)
 {
-	quat q = a;
-	//TODO: student implementation ofSDouble goes here
-
+	quat q = 2 * Dot(a, b) * b - a;
 	return q.Normalize();
 }
 
 quat quat::SBisect(const quat& a, const quat& b)
 {
-	quat q = a;
-	//TODO: student implementation of SBisect goes here
-
-
+	quat q{ a + b };
 	return q.Normalize();
 }
-
+quat QuaternionCatmul_Rom(const std::vector<quat> input, double u)
+{
+	if (input.size() == 0) {
+		throw std::runtime_error("Number of Quaternions Zero");
+	}
+	else if (input.size() == 1) {
+		return input[0];
+	}
+	std::vector<quat> output;
+	output.reserve(input.size() - 1);
+	for (size_t i{ 0 }; i < input.size() - 1; ++i)
+	{
+	   output.push_back(quat::Slerp(input[i], input[i + 1], u));
+	}
+	return QuaternionCatmul_Rom(output, u);
+}
 
 quat quat::Scubic(const quat& b0, const quat& b1, const quat& b2, const quat& b3, double u)
 {
-	quat result = b0;
-	quat b01, b11, b21, b02, b12, b03;
-	// TODO: Return the result of Scubic based on the cubic quaternion curve control points b0, b1, b2 and b3
-
-	return result.Normalize(); // result should be of unit length
+	std::vector<quat> input{ b0, b1, b2, b3 };
+	return QuaternionCatmul_Rom(input, u); // result should be of unit length
 }
 
 
@@ -1162,26 +1252,46 @@ quat quat::ProjectToAxis(const quat& q, vec3& axis)
 // Conversion functions
 void quat::ToAxisAngle (vec3& axis, double& angleRad) const
 {
-	axis = vec3(1.0, 0.0, 0.0);
-	angleRad = 0.0;
-	//TODO: student implementation for converting quaternion to axis/angle representation goes here
-
+	axis = vec3();
+	angleRad = 2 * acos(mQ[VW]);
+	axis = vec3(mQ[VX], mQ[VY], mQ[VZ]);
+	if (angleRad > 2 * M_PI - EPSILON || angleRad < EPSILON) {
+		// call cos(theta/2) = 1 or -1   sin(theta/2) is zero
+		axis.Normalize();
+	}
+	else {
+		axis /= sin(angleRad / 2);
+	}
 }
 
-void quat::FromAxisAngle (const vec3& axis, double angleRad)
+void quat::FromAxisAngle(const vec3& axis, double angleRad)
 {
-	//TODO: student implementation for converting from axis/angle to quaternion goes here
-	mQ[VW] = 0.0; mQ[VX] = 1.0; mQ[VY] = 0.0;  mQ[VZ] = 0.0;
+	vec3 axisNormalized(axis);
+	axisNormalized.Normalize();
+	axisNormalized *= sin(angleRad / 2);
+	mQ[VW] = cos(angleRad / 2);
+	mQ[VX] = axisNormalized[VX];
+	mQ[VY] = axisNormalized[VY];
+	mQ[VZ] = axisNormalized[VZ];
 }
-
-mat3 quat::ToRotation () const
+// my formulation assuming that the quaternion is normalized.
+mat3 quat::ToRotation() const
 {
-	mat3 m;
-	m.Identity();
-	//TODO: student implementation for converting quaternion to rotation matrix goes here
-
-
-    return m;
+	double w2{ mQ[VW] * mQ[VW] };
+	double x2{ mQ[VX] * mQ[VX] };
+	double y2{ mQ[VY] * mQ[VY] };
+	double z2{ mQ[VZ] * mQ[VZ] };
+	// D stands for doubled
+	double wxD{ 2 * mQ[VW] * mQ[VX] };
+	double wyD{ 2 * mQ[VW] * mQ[VY] };
+	double wzD{ 2 * mQ[VW] * mQ[VZ] };
+	double xyD{ 2 * mQ[VX] * mQ[VY] };
+	double xzD{ 2 * mQ[VX] * mQ[VZ] };
+	double yzD{ 2 * mQ[VY] * mQ[VZ] };
+	vec3 row1(w2 + x2 - y2 - z2, xyD - wzD, xzD + wyD);
+	vec3 row2(xyD + wzD, w2 - x2 + y2 - z2, yzD - wxD);
+	vec3 row3(xzD - wyD, yzD + wxD, w2 - x2 - y2 + z2);
+	return mat3(row1, row2, row3);
 }
 
 std::istream& operator >> (std::istream& s, quat& q)

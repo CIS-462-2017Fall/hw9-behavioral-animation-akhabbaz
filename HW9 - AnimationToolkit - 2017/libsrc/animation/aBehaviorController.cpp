@@ -208,14 +208,14 @@ void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& cont
 {
 	vec3& force = controlInput[0];
 	vec3& torque = controlInput[1];
-
+        mat3 bodyToWorld { mat3::Rotation3D(vec3(0, 1, 0), m_Euler[1])};
 	// Compute the stateDot vector given the values of the current state vector and control input vector
 	// TODO: add your code here
-
-
-
-
-
+	m_stateDot[0] = bodyToWorld * m_VelB;
+	m_stateDot[1] = m_AVelB;
+	// add in the Coriolis force to get the body velocities correct
+	m_stateDot[2] = m_force/gMass - m_AVelB.Cross(m_VelB); 
+	m_stateDot[3] = m_torque/gInertia;
 }
 
 void BehaviorController::updateState(float deltaT, int integratorType)

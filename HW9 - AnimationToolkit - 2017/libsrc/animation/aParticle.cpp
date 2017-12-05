@@ -42,12 +42,12 @@ void AParticle::setState(vector<float>& newState)
 		m_state[i] = newState[i];
 	
 	m_Pos[0] = m_state[0];
-	m_Pos[1] = m_state[1]; 
-	m_Pos[2] = m_state[2];
+	m_Pos[1] = m_state[2]; 
+	m_Pos[2] = m_state[3];
 
-	m_Vel[0] = m_state[3];
-	m_Vel[1] = m_state[4];
-	m_Vel[2] = m_state[5];
+	m_Vel[0] = m_state[4];
+	m_Vel[1] = m_state[5];
+	m_Vel[2] = m_state[6];
 
 }
 
@@ -57,12 +57,12 @@ void AParticle::setState(float *newState)
 		m_state[i] = newState[i];
 	
 	m_Pos[0] = m_state[0];
-	m_Pos[1] = m_state[1];
-	m_Pos[2] = m_state[2];
+	m_Pos[1] = m_state[2];
+	m_Pos[2] = m_state[3];
 
-	m_Vel[0] = m_state[3];
-	m_Vel[1] = m_state[4];
-	m_Vel[2] = m_state[5];
+	m_Vel[0] = m_state[4];
+	m_Vel[1] = m_state[5];
+	m_Vel[2] = m_state[6];
 }
 vector<float> AParticle::getState()
 {
@@ -159,15 +159,15 @@ void AParticle::computeForces(int mode)
 
 void AParticle::computeDynamics(vector<float>& state, vector<float>& stateDot, float deltaT)
 {
-	//TODO: Add your code here
-
-	
-
-
-
-
-
-
+//       update the derivative of position and velocity using the kinematic equations.
+         stateDot[0] = state[3];
+	 stateDot[1] = state[4];
+	 stateDot[2] = state[5];
+	 // 
+	 float massInv { 1/ state[9]};
+	 stateDot[3] = state[6] * massInv;
+	 stateDot[4] = state[7] * massInv;
+	 stateDot[5] = state[8] * massInv;
 }
 
 void AParticle::updateState(float deltaT, int integratorType)
@@ -179,18 +179,28 @@ void AParticle::updateState(float deltaT, int integratorType)
 	switch (integratorType)
 	{
 		case EULER:
-			// Add your code here
-
-
-
+			for (int i {0}; i < 6; ++i) 
+			{
+				m_state[i] += m_stateDot[i] * deltaT;
+			}
 			break;
 
 		case RK2:
 		{
-			
-			// Add your code here
-
-
+			// calculate the next velocity
+			vec3 vnext;
+			for (int i {0}; i < 3; ++i) 
+			{
+				 vnext[i] = m_state[i+3] + m_stateDot[i + 3] * deltaT;
+			}
+			// use the average of the velocity at i and i + 1 to update position
+			for (int i{0} ; i < 3; ++i) {
+				m_state[i] += 0.5 * (vnext[i] + m_stateDot[i]) * deltaT;
+			}
+			// the derivative of the velocity is constant so no need to average
+			for (int i{3}; i < 6; ++i) {
+				m_state[i] += m_stateDot[i] * deltaT;
+			}
 			break;
 		}
 	}
@@ -201,6 +211,8 @@ void AParticle::updateState(float deltaT, int integratorType)
 	m_Vel[0] = m_state[3];
 	m_Vel[1] = m_state[4];
 	m_Vel[2] = m_state[5];
+	// added to decrement the time after each step
+	m_state[10] -= deltaT;
 }
 
 void AParticle::update(float deltaT, int forceMode)
@@ -212,7 +224,7 @@ void AParticle::update(float deltaT, int forceMode)
 		return;
 	}
 	computeForces(forceMode);
-    updateState(deltaT, EULER);
+    updateState(deltaT, RK2);
 	
 }
 

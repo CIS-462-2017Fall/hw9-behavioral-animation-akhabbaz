@@ -94,11 +94,10 @@ protected:
 	vector<AActor>* m_AgentList;  // a list of all the other agents in the world
 	vector<Obstacle>* m_ObstacleList;          // a list of all the obstacles in the world
 	// end new
-
-    Behavior* mpActiveBehavior;  // currently active behavior
-    bool m_Active;     // determines whether the agent behavior controller is active or not
+    	Behavior* mpActiveBehavior;  // currently active behavior
+    	bool m_Active;     // determines whether the agent behavior controller is active or not
 	bool mLeader;      // determines whether agent is a leader
-    AJoint m_Guide;    // the position and orientation of the guide determines the position and orientation of the agent root joint
+    	AJoint m_Guide;    // the position and orientation of the guide determines the position and orientation of the agent root joint
 	AJoint* m_pBehaviorTarget; // target for behaviors
 
     // the state is comprised of world postion, body Euler angles, body velocity, and body angular velocity 
@@ -144,10 +143,10 @@ protected:
 
     // Control inputs: speed and heading direction
     enum {USPEED, UHEADING};
-	vec3 m_Vdesired;   // desired world velocity
-	double m_vd;
+    vec3 m_Vdesired;   // desired world velocity
+    double m_vd;
     double m_thetad;
-	double m_lastThetad;
+    double m_lastThetad;
 
 public:
     static double gKNeighborhood;
