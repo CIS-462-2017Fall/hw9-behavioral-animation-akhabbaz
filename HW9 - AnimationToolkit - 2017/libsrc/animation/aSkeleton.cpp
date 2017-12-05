@@ -117,11 +117,11 @@ void ASkeleton::clear()
 	mJoints.clear();
 }
 
+//Update  Joint Transforms recursively, starting at the root
 void ASkeleton::update()
 {
 	if (!mRoot) return; // Nothing loaded
-
-	// TODO: Update  Joint Transforms recursively, starting at the root
+        mRoot -> updateTransform();
 
 }
 

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <iostream>
-
+#include <random>
 
 #ifndef RAD
 #define PI 3.14159265358979f
@@ -15,7 +15,8 @@
 #ifndef GRAVITY
 #define GRAVITY 9.8f
 #endif
-
+static std::default_random_engine dre;
+static constexpr double MAXDEGREES {360.0};
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -94,15 +95,19 @@ void AFireworks::fireRocket(float posx, float* color)
 
 	// need to compute and set values for initial state of rocket  (including time to live)
 	float stateVals[12] = { 0.0 };
-	
-	//TODO: Add your code here
-
-
-
-
-
-
-	newRocket->setState(stateVals);
+	stateVals[0] = posx; 
+	// set velocity
+	std::uniform_real_distribution<double> rocketAngle(80, 110);
+	std::uniform_real_distribution<double> speed(60, 120);
+ 	double Angle { rocketAngle(dre)};
+	double rSpeed { speed(dre)};
+	stateVals[3] = static_cast<float>(rSpeed * std::cos(Angle * RAD));
+	stateVals[4] = static_cast<float>(rSpeed * std::sin(Angle * RAD));
+	newRocket -> setState(stateVals);
+	newRocket -> setMass(50);
+	newRocket -> setLifeSpan(10);
+	newRocket -> setAlive();
+	newRocket -> computeForces(0); // adds gravity other forces added by gui
 	newRocket->setAttractor(m_attractorPos);
 	newRocket->setRepeller(m_repellerPos);
 	newRocket->setWind(m_windForce);
@@ -142,32 +147,34 @@ void AFireworks::explode(float rocketPosx, float rocketPosy, float rocketPosz,
 		
 	// The default mass of the rocket is 50.0, it should explode for a total of explosionCount = TOTALEXPLOSIONS time steps
 {
-
-
-	float stateVals[12] = { 0.0 };
-	int numSparks = MAXSPARKS;
-	float velocity = MAXVELOCITY;
-
-	// TODO: Add  code here to randomize the number of sparks and their initial velocity
-	 
-
-
+	// code added to randomize the number of sparks and their initial velocity
+	std::uniform_int_distribution<int> uniInteger(10, 60);
+	std::uniform_real_distribution<double>  uniVelocity(20, 40);
+	double sparkSpeed { uniVelocity(dre)};
+        int	numSparks = uniInteger(dre);
+        double interval = RAD * MAXDEGREES/numSparks; 
 	for (int i = 0; i < numSparks; i++)
 	{
 		ASpark* newSpark = new ASpark(rocketColor);
-		// TODO: Add your code here
+		float stateVals[12] = { 0.0 };
+		stateVals[0] = rocketPosx;
+		stateVals[1] = rocketPosy;
+		stateVals[2] = rocketPosz;
+		double thetaRad = i * interval;
 
-	
-
-
-
-
-
-
+		stateVals[3] = sparkSpeed * std::cos( thetaRad); 
+		stateVals[3] += rocketVelx;
+		stateVals[4] = sparkSpeed * std::sin( thetaRad);
+		stateVals[4] += rocketVely;
+		stateVals[5] = rocketVelz;
 		newSpark->setState(stateVals);
+		newSpark -> setMass( 50);
+		newSpark -> setLifeSpan(10);
+		newSpark -> setAlive();
 		newSpark->setAttractor(m_attractorPos);
 		newSpark->setRepeller(m_repellerPos);
 		newSpark->setWind(m_windForce);
+		newSpark -> computeForces(0);
 		sparks.push_back(newSpark);
 	}
 }
@@ -196,12 +203,31 @@ void AFireworks::update(float deltaT, int extForceMode)
 
 	//Step 2. TODO: Iterate through every ARocket in rockets. If the rocket is dead, erase it from rockets.
 	          //If the rocket explosionCount does not equal - 1 then explode another ring of sparks.
+       
 	
 	ARocket* pRocket;	
 	index = 0;
+	std::vector<ARocket*>::iterator current{ rockets.begin()};
+	while (current < rockets.end()){
+		pRocket = *current; 
+		if (!pRocket -> m_alive) {
+			current = rockets.erase(current);
+			delete pRocket;
+		}
+		else 
+		{
+			if (pRocket -> m_mode == ROCKETMODE::EXPLOSION) 
+			{
+				vec3 pos { pRocket -> m_Pos};
+				vec3 vel { pRocket -> m_Vel};
+				vec3 color { pRocket -> mColor};
+				explode(pos[0], pos[1], pos[2], vel[1],
+						vel[2], vel[3], pRocket -> m_color);
+			}
 
-	// Add you code here
-
+			++current;
+		}
+	}
 
 
 

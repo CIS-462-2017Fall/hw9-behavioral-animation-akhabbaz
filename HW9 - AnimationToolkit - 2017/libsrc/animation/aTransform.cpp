@@ -25,73 +25,43 @@ ATransform& ATransform::operator = (const ATransform& orig)
     m_translation = orig.m_translation;
     return *this;
 }
-
-
+// Inverse calculates the inverse.  We could use the transpose because
+//  the matrix is rigid so the inverse is the transform
+//  a rotation and a translation.
 ATransform ATransform::Inverse() const
 {
-	ATransform result;
-
-	// TODO: compute the inverse of a transform given the current rotation and translation components
-
-
- 
-
-	return result;
+	// to make this more general but slower could use the inverse, but
+	//  that is not needed for joints because the H matrix consists of a 
+	//  rotation, not a general 3D matrix.
+        mat3  rotT {m_rotation.Transpose()}; 
+	vec3 d = - rotT * m_translation;
+	return ATransform(rotT, d);
 }
-
-
+//  RotTrans will transform the vector by a rotation and a translation according
+//  to the transform's properties
 vec3 ATransform::RotTrans(const vec3& vecToTransform) const
 {
-	vec3 result(0.0);
-
-	// TODO: Transform the input vector based on this transform's rotation and translation components
-
-
-
- 
-
-	return result;
-
+	return Translate(Rotate(vecToTransform));
 }
 
+// Transform the input direction based on this transform's rotation component
 vec3 ATransform::Rotate(const vec3& vecToTransform) const
 {
-	vec3 result(0.0);
-
-	// TODO: Transform the input direction based on this transform's rotation component
-
-
-
- 
-
-	return result;
+	return m_rotation * vecToTransform;
 }
-
+//Transform the input vector based on this transform's translation component
 vec3 ATransform::Translate(const vec3& vecToTransform) const
 {
-	vec3 result(0.0);
-
-	// TODO: Transform the input vector based on this transform's translation component
-
-
-
- 
-
-	return result;
+	return vecToTransform + m_translation;
 
 }
 
+// implement the equivalent of multiplying  H1 and H2 transformation matrices and return the result
 ATransform operator * (const ATransform& H1, const ATransform& H2)
 {
-	ATransform result;
-
-	// TODO: implement the equivalent of multiplying  H1 and H2 transformation matrices and return the result
-
-
-
- 
-
-	return result;
+        mat3  mproduct { H1.m_rotation * H2.m_rotation};
+	vec3  dresult { H1.RotTrans(H2.m_translation)};
+	return ATransform(mproduct, dresult);
 }
 
 vec3 operator * (const ATransform& A, const vec3& v)

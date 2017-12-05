@@ -15,7 +15,7 @@ ATarget::~ATarget()
 {
 
 }
-
+// does not update the children
 void ATarget::update()
 {
 	if (getParent() == NULL)

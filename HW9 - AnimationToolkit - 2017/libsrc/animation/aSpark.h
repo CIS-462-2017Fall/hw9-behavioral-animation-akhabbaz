@@ -69,11 +69,20 @@ public:
 	float m_color[3];
 	
 	//Coefficients of restitution
-	float m_COR;
-
+	double m_COR;
+        // AttractorScale  Strength of attractor
+	double AttractorScale;
+	double RepellerScale;
+	//Scale of the drag force
+	double dragScale;
+	double windScale;
+	double randomScale;
+	
 	vec3 m_attractorPos;  // location of particle attractor
 	vec3 m_repellerPos;   // location of particle repeller
-	vec3 m_windForce;     
+	vec3 m_windForce;
+	// counts the calls since last random force
+	unsigned count;
 };
 
 #endif // !defined(SPARK_H)

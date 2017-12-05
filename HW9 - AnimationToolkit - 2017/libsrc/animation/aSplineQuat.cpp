@@ -2,6 +2,8 @@
 #include <algorithm>
 #pragma warning(disable:4018)
 
+constexpr double aThird{ 1 / 3.0 };
+
 ASplineQuat::ASplineQuat() : mDt(1.0 / 120.0), mLooping(true), mType(LINEAR)
 {
 }
@@ -121,8 +123,23 @@ void ASplineQuat::computeControlPoints(quat& startQuat, quat& endQuat)
 	//  for each cubic quaternion curve, then store the results in mCntrlPoints in same the same way 
 	//  as was used with the SplineVec implementation
 	//  Hint: use the SDouble, SBisect and Slerp to compute b1 and b2
-
-
+		b0 = mKeys[segment].second;
+		b3 = mKeys[segment + 1].second;
+		// here q0 is the prior quaternion used for calculating 
+		// b1
+		q0 = (segment == 0) ? startQuat : mKeys[segment - 1].second;
+		// q1 is q(i+1)' reflect and scale q0 about b0
+		q1 = quat::SDouble(q0, b0);
+		// q1 is now q(i +1)*  mid quaternion between b3 and q(i+1)'
+		q1 = quat::SBisect(q1, b3);
+		b1 = quat::Slerp(b0, q1, aThird);
+		// get the quaternion one past b3 or the endQuat
+		q2 = (segment == numKeys - 2) ? endQuat : mKeys[segment + 2].second;
+		//qi' reflect and scale q2 about b3
+		q_1 = quat::SDouble(q2, b3);
+		//qi* 
+		q_1 = quat::SBisect(q_1, b0);
+		b2  = quat::Slerp(b3, q_1, aThird);
 		mCtrlPoints.push_back(b0);
 		mCtrlPoints.push_back(b1);
 		mCtrlPoints.push_back(b2);
@@ -136,13 +153,10 @@ quat ASplineQuat::getLinearValue(double t)
 	quat q;
 
 	int segment = getCurveSegment(t);
-
-	// TODO: student implementation goes here
-	// compute the value of a linear quaternion spline at the value of t using slerp
-
-	return q;
-
-	
+	double difference{ mKeys[segment + 1].first - mKeys[segment].first };
+	double numerator{ t - mKeys[segment].first };
+	double u{ numerator / difference };
+	return quat::Slerp(mKeys[segment].second, mKeys[segment + 1].second, u);
 }
 
 void ASplineQuat::createSplineCurveLinear()
@@ -167,12 +181,15 @@ quat ASplineQuat::getCubicValue(double t)
 	quat q, b0, b1, b2, b3;
 
 	int segment = getCurveSegment(t);
-
-	// TODO: student implementation goes here
-	// compute the value of a cubic quaternion spline at the value of t using Scubic
-
-	
-	return q;
+	double difference{ mKeys[segment + 1].first - mKeys[segment].first };
+	double numerator{ t - mKeys[segment].first };
+	double u{ numerator / difference };
+	size_t start = segment * 4;
+	b0 = mCtrlPoints[start++];
+	b1 = mCtrlPoints[start++];
+	b2 = mCtrlPoints[start++];
+	b3 = mCtrlPoints[start++];
+	return quat::Scubic(b0, b1, b2, b3, u);
 }
 
 void ASplineQuat::createSplineCurveCubic()

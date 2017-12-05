@@ -70,8 +70,7 @@ protected:
 	bool mValidChain = true;
 	bool mvalidLimbIKchains;
 	bool mvalidCCDIKchains;
-
-    AIKchain mRhandIKchain; // IK chain of joint pointers starting with Rhand joint 
+	AIKchain mRhandIKchain; // IK chain of joint pointers starting with Rhand joint 
 	AIKchain mLhandIKchain; // IK chain of joint pointers starting with Lhand joint     
 	AIKchain mRfootIKchain; // IK chain of joint pointers starting with Rfoot joint 
 	AIKchain mLfootIKchain; // IK chain of joint pointers starting with Lfoot joint 
@@ -85,9 +84,10 @@ protected:
 
 	int computeLimbIK(ATarget target, AIKchain& IKchain, const vec3 axis, ASkeleton* pIKSkeleton);
 	int computeCCDIK(ATarget target, AIKchain&, ASkeleton* pIKSkeleton);
-
-    int mEndJointID = -1;
-    int mChainSize = -1;
+	int computePseudoInvIK(ATarget target, AIKchain&, ASkeleton* pIKSkeleton);
+	
+	int mEndJointID = -1;
+	int mChainSize = -1;
 
 	int mNumJoints = 0;
 	
