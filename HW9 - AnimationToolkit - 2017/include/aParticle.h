@@ -107,10 +107,10 @@ public:
 		vector<float> m_stateDot;
 
         //Delta time of one simulation step
-        float m_deltaT;
+        	float m_deltaT;
 
         //Indicate if the particle is alive or dead
-        bool m_alive;
+        	bool m_alive;
 
 		double m_lifeSpan; //time to live
 		double m_mass;
