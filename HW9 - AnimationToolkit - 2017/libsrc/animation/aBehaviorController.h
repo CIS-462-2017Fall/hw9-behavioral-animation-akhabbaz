@@ -47,11 +47,10 @@ public:
 	bool isLeader()  { return mLeader; }
 
 	virtual void display();
-
-    AJoint& getGuide()  { return m_Guide;  }   // the guide determines the agent root position and orientation
+	AJoint& getGuide()  { return m_Guide;  }   // the guide determines the agent root position and orientation
 	vec3 getPosition()  { return  m_Guide.getLocalTranslation(); return m_Pos0; }  // gets the global position of agent
-    vec3 getDesiredVelocity()  { return m_Vdesired; }
-    vec3 getVelocity()  { return m_Vel0;  }
+	vec3 getDesiredVelocity()  { return m_Vdesired; }
+	vec3 getVelocity()  { return m_Vel0;  }
 	vec3 getOrientation()  { vec3 angle(0.0, m_state[ORI][_Y], 0.0); return angle; }  // gets global orientation of agent
 
 	void setTarget(AJoint& target);  // sets the target for all the behaviors in BehaviorList
@@ -74,7 +73,9 @@ public:
 	virtual void act(double deltaT);
 
 	//given the state computes stateDot based on the agent system dynamics 
-	virtual void computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT);
+	//this uses no private or state variables and could be declared static. 
+	//to 
+  	static void computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT);
 	
 	//updates Agent state
 	virtual void updateState(float deltaT, int integratorType);

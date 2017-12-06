@@ -205,17 +205,19 @@ void BehaviorController::act(double deltaT)
 void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT)
 // Compute stateDot vector given the control input and state vectors
 //  This function sets derive vector to appropriate values after being called
+//  make this a static function that only depends on the inputs not the stored values
+//  does not depend on deltaT
 {
 	vec3& force = controlInput[0];
 	vec3& torque = controlInput[1];
-        mat3 bodyToWorld { mat3::Rotation3D(vec3(0, 1, 0), m_Euler[1])};
+        mat3 bodyToWorld { mat3::Rotation3D(vec3(0, 1, 0), state[ORI][_Y])};
 	// Compute the stateDot vector given the values of the current state vector and control input vector
 	// TODO: add your code here
-	m_stateDot[0] = bodyToWorld * m_VelB;
-	m_stateDot[1] = m_AVelB;
+	stateDot[POS] = bodyToWorld * state[VEL];
+	stateDot[ORI] = state[AVEL];
 	// add in the Coriolis force to get the body velocities correct
-	m_stateDot[2] = m_force/gMass - m_AVelB.Cross(m_VelB); 
-	m_stateDot[3] = m_torque/gInertia;
+	stateDot[VEL] = force/gMass - state[AVEL].Cross(state[VEL]); 
+	stateDot[AVEL] = torque/gInertia;
 }
 
 void BehaviorController::updateState(float deltaT, int integratorType)
@@ -224,30 +226,72 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	//  this should be similar to what you implemented in the particle system assignment
 
 	// TODO: add your code here
-	
-
-
-
-
-
-
-
+	if (integratorType == 0)
+	{
+		computeDynamics( m_state, m_controlInput, m_stateDot, deltaT);
+		for (size_t i {0}; i < m_state.size(); ++i) {
+			m_state[i] += m_stateDot[i] * deltaT;
+		}
+	}
+	// rK2
+	else if (integratorType = 1) 
+	{
+		vector<vec3> stateDotTemp(4);
+		vector<vec3> stateTemp(4);
+		computeDynamics(m_state, m_controlInput, stateDotTemp, deltaT);
+		for (size_t i{0}; i < m_state.size(); ++i) 
+		{
+			stateTemp[i] = m_state[i] + stateDotTemp[i] * deltaT;
+		}
+		computeDynamics(stateTemp, m_controlInput, m_stateDot, deltaT);
+		for ( size_t i {0}; i < m_state.size(); ++i) 
+		{
+			// the best estimate of the velocity is the average of 
+			// the estimate at the beginning and end of the interval
+			m_stateDot[i] = 0.5 * ( m_stateDot[i] + stateDotTemp[i]);
+			m_state[i] = deltaT * m_stateDot[i];
+		}
+	}
 	//  given the new values in m_state, these are the new component state values 
 	m_Pos0 = m_state[POS];
+	m_Vel0 = m_stateDot[POS];
 	m_Euler = m_state[ORI];
 	m_VelB = m_state[VEL];
 	m_AVelB = m_state[AVEL];
 
 	//  Perform validation check to make sure all values are within MAX values
-	// TODO: add your code here
-
-
-
-
-
-
-
-
+	// max Velocity in the body frame
+	double speed2 = m_VelB.SqrLength();
+	float factor;
+	if (speed2 > gMaxSpeed * gMaxSpeed) {
+		factor = gMaxSpeed /std::sqrt(speed2);
+		m_VelB *= factor;
+		m_state[VEL] = m_VelB;
+	}
+	// max angular speed
+	speed2 = m_AVelB.SqrLength();
+	if (speed2 > gMaxAngularSpeed * gMaxAngularSpeed)
+	{
+		factor = gMaxAngularSpeed/std::sqrt(speed2);
+		m_AVelB *= factor;
+		m_state[AVEL] = m_AVelB;
+	}
+        // maxForce;
+	speed2 = m_force.SqrLength();
+	if (speed2 > gMaxForce * gMaxForce)
+	{
+		factor = gMaxForce/std::sqrt(speed2);
+		m_force *= factor;
+		m_controlInput[0] = m_force;
+	}
+	// maxTorque
+	speed2 = m_torque.SqrLength();
+	if (speed2 > gMaxTorque * gMaxTorque)
+	{
+		factor = gMaxTorque/std::sqrt(speed2);
+		m_torque *= factor;
+		m_controlInput[1] = m_torque;
+	}
 	// update the guide orientation
 	// compute direction from nonzero velocity vector
 	vec3 dir;
