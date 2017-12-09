@@ -115,7 +115,7 @@ protected:
 	int m_stateDim = 4; 
 	vector<vec3> m_state;
 		// m_state[0] = m_Pos0 = [x 0 z]T for the 2D planar case
-		// m_state[1] = m_Euler = [ 0 theta 0]T for the 2D planar case 
+		// m_state[1] = m_Euler  Body= [ 0 theta 0]T for the 2D planar case 
 		// m_state[2] = m_VelB = [ Vx 0 Vz]T for the 2D planar case
 		// m_state[3] = m_AVelB =  [ 0 thetaDot 0]T for the 2D planar case 
 
