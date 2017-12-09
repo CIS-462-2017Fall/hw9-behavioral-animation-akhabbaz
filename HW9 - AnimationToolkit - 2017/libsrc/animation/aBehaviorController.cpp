@@ -176,6 +176,11 @@ void BehaviorController::control(double deltaT)
 		ClampAngle(anglediff);
 		vec3 angleError(0, anglediff, 0);
 		m_torque = gInertia * (gOriKp * angleError - gOriKp * m_state[AVEL]);
+		if ( std::fabs (m_torque[_Y]) < 30.0 &&  (std::fabs(anglediff - M_PI_O2) < 0.001  || std::fabs(anglediff + M_PI_O2) < 0.001))
+		{
+			m_torque -= gOriKp * m_state[AVEL];
+		}
+
 		// when agent desired agent velocity and actual velocity < 2.0 then stop moving
 		if (m_vd < 2.0 &&  m_state[VEL][_Z] < 2.0)
 		{
@@ -209,14 +214,14 @@ void BehaviorController::control(double deltaT)
 	m_controlInput[0] = m_force;
 	m_controlInput[1] = m_torque;
 }
-
+// use RK2
 void BehaviorController::act(double deltaT)
 {
 	computeDynamics(m_state, m_controlInput, m_stateDot, deltaT);
 	
 	int EULER = 0;
 	int RK2 = 1;
-	updateState(deltaT, EULER);
+	updateState(deltaT, RK2);
 }
 
 // compute dynamics for the no slip condition;  the torque is along the y axis, the force is in the zx plane
@@ -235,7 +240,6 @@ void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& cont
 	// stored in the state vectors.
     mat3 bodyToWorld { mat3::Rotation3D(vec3(0, 1, 0), M_PI_O2 - state[ORI][_Y])};
 	// Compute the stateDot vector given the values of the current state vector and control input vector
-	// TODO: add your code here
 	stateDot[POS] = bodyToWorld * state[VEL];
 	stateDot[ORI] = state[AVEL];
 	// add in the Coriolis force to get the body velocities correct
@@ -258,7 +262,6 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	//  Update the state vector given the m_stateDot vector using Euler (integratorType = 0) or RK2 (integratorType = 1) integratio
 	//  this should be similar to what you implemented in the particle system assignment
 
-	// TODO: add your code here
 	if (integratorType == 0)
 	{
 		for (size_t i {0}; i < m_state.size(); ++i) {
@@ -280,9 +283,10 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 			// the best estimate of the velocity is the average of 
 			// the estimate at the beginning and end of the interval
 			m_stateDot[i] = 0.5 * ( m_stateDot[i] + stateDotTemp[i]);
-			m_state[i] = deltaT * m_stateDot[i];
+			m_state[i] += deltaT * m_stateDot[i];
 		}
 	}
+	ClampAngle(m_state[ORI][_Y]);
 	//  Perform validation check to make sure all values are within MAX values
 	// max Velocity in the body frame
 	double speed2 = m_VelB.SqrLength();
