@@ -57,7 +57,7 @@ void BehaviorViewer::initializeGui()
 	TwDefine(" 'File controls' size='200 300' position='5 185' iconified=true fontresizable=false alpha=200");
 
 	m_TwBehaviorBar = TwNewBar("Behavior controls");
-	TwDefine(" 'Behavior controls' size='200 200' position='5 185' iconified=false fontresizable=false alpha=200");
+	TwDefine(" 'Behavior controls' size='200 240' position='5 185' iconified=false fontresizable=false alpha=200");
 	TwEnumVal beTypeEV[] = {
 		{ SEEK, "Seek" },
 		{ FLEE, "Flee" },
@@ -80,12 +80,12 @@ void BehaviorViewer::initializeGui()
 	TwAddVarRW(m_TwBehaviorBar, "Max angular", TW_TYPE_DOUBLE, &BehaviorController::gMaxAngularSpeed, "");
 	TwAddVarRW(m_TwBehaviorBar, "Neighborhod", TW_TYPE_DOUBLE, &BehaviorController::gKNeighborhood, "");
 	TwAddVarRW(m_TwBehaviorBar, "Radius", TW_TYPE_DOUBLE, &BehaviorController::gAgentRadius, "");
-	TwAddVarRW(m_TwBehaviorBar, "Mass", TW_TYPE_DOUBLE, &BehaviorController::gMass, "");
-	TwAddVarRW(m_TwBehaviorBar, "Inertia", TW_TYPE_DOUBLE, &BehaviorController::gInertia, "");
+	TwAddVarRW(m_TwBehaviorBar, "AngularFreq", TW_TYPE_DOUBLE, &BehaviorController::AngularFreq,  "");
+	TwAddVarRW(m_TwBehaviorBar, "DampingRatio", TW_TYPE_DOUBLE, &BehaviorController::dampingRatio, ""); 
+	TwAddVarRW(m_TwBehaviorBar, "gVelKv", TW_TYPE_DOUBLE, &BehaviorController::gVelKv, "");
 	TwAddVarRW(m_TwBehaviorBar, "Debug", TW_TYPE_BOOLCPP, &m_DebugDraw, "");
 	TwAddButton(m_TwBehaviorBar, "Reset", onResetCb, this, "");
-
-	//TODO: Add your code here to create additional GUI Variables
+	TwAddButton(m_TwBehaviorBar, "UpdateFB", onUpdateTimeConstantCb , this, "");
 }
 
 
@@ -467,11 +467,31 @@ void TW_CALL BehaviorViewer::onGetNumObstaclesCb(void *value, void *clientData)
 	*static_cast<int *>(value) = viewer->m_numObstacles;
 }
 
-
+// callbacks added to behaviorViewer
 void TW_CALL BehaviorViewer::onResetCb(void *clientData)
 {
     BehaviorViewer* viewer = ((BehaviorViewer*)clientData);
-	viewer->reset(viewer->m_numCharacters, viewer->m_numObstacles);
+    viewer->reset(viewer->m_numCharacters, viewer->m_numObstacles);
+}
+//
+//void TW_CALL BehaviorViewer::onSetAngularFreqCb(const void *value, void *clientData)
+//{
+//     BehaviorController::AngularFreq = *static_cast<const double *>(value);
+//     BehaviorController::updateTimeConstant();
+//}
+//void TW_CALL BehaviorViewer::onGetAngularFreqCb(void * value, void *clientData)
+//{
+//	value = static_cast<void *>(&BehaviorController::AngularFreq);
+//	double val = *static_cast<double *>(value);
+//}
+//void TW_CALL BehaviorViewer::onGetDampingTimeConstantCb(void * value, void *clientData)
+//{
+//	value = static_cast<void *>(&BehaviorController::dampingRatio);
+//	double val = *static_cast<double *>(value);
+//}
+
+void TW_CALL BehaviorViewer::onUpdateTimeConstantCb(void *clientData)
+{
+     BehaviorController::updateTimeConstant();
 }
 
-//TODO: Add your code here to create the corresponding callback functions for each new GUI Variable added

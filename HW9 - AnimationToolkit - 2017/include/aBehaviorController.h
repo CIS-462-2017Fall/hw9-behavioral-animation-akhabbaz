@@ -47,11 +47,10 @@ public:
 	bool isLeader()  { return mLeader; }
 
 	virtual void display();
-
-    AJoint& getGuide()  { return m_Guide;  }   // the guide determines the agent root position and orientation
+	AJoint& getGuide()  { return m_Guide;  }   // the guide determines the agent root position and orientation
 	vec3 getPosition()  { return  m_Guide.getLocalTranslation(); return m_Pos0; }  // gets the global position of agent
-    vec3 getDesiredVelocity()  { return m_Vdesired; }
-    vec3 getVelocity()  { return m_Vel0;  }
+	vec3 getDesiredVelocity()  { return m_Vdesired; }
+	vec3 getVelocity()  { return m_Vel0;  }
 	vec3 getOrientation()  { vec3 angle(0.0, m_state[ORI][_Y], 0.0); return angle; }  // gets global orientation of agent
 
 	void setTarget(AJoint& target);  // sets the target for all the behaviors in BehaviorList
@@ -74,12 +73,13 @@ public:
 	virtual void act(double deltaT);
 
 	//given the state computes stateDot based on the agent system dynamics 
-	virtual void computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT);
+	//this uses only m_Guide to get the rotation matrix.
+  	void computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT);
 	
 	//updates Agent state
 	virtual void updateState(float deltaT, int integratorType);
 
-
+        static void updateTimeConstant();
 
 protected:
 	typedef std::map<BehaviorType, Behavior*> BehaviorMap;
@@ -114,7 +114,7 @@ protected:
 	int m_stateDim = 4; 
 	vector<vec3> m_state;
 		// m_state[0] = m_Pos0 = [x 0 z]T for the 2D planar case
-		// m_state[1] = m_Euler = [ 0 theta 0]T for the 2D planar case 
+		// m_state[1] = m_Euler  Body= [ 0 theta 0]T for the 2D planar case 
 		// m_state[2] = m_VelB = [ Vx 0 Vz]T for the 2D planar case
 		// m_state[3] = m_AVelB =  [ 0 thetaDot 0]T for the 2D planar case 
 
@@ -163,6 +163,8 @@ public:
     static double gVelKv;  // Velocity Kv gain
 
     //Heading controller gains: torque = I * ( -Kv * thetaDot - Kp * theta + Kp * thetad)
+    static double dampingRatio;
+    static double AngularFreq;
     static double gOriKv;  // Orientation Kv gain
     static double gOriKp;  // Orientation Kp gain
 

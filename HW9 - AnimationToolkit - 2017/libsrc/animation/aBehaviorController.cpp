@@ -18,8 +18,12 @@ double BehaviorController::gMaxForce = 2000.0;
 double BehaviorController::gMaxTorque = 2000.0;
 double BehaviorController::gKNeighborhood = 500.0;
 // orig Kv should be 32 so that the settling time is 1/4 of a second
-double BehaviorController::gOriKv = 32;   
-double BehaviorController::gOriKp = 30;
+double BehaviorController::dampingRatio = 1;
+double BehaviorController::AngularFreq  = 16;
+double BehaviorController::gOriKv = 2 * BehaviorController::AngularFreq * 
+                                   BehaviorController::dampingRatio;
+double BehaviorController::gOriKp = BehaviorController::AngularFreq *
+                                    BehaviorController::AngularFreq;
 // tv should be .1 second to have a settling time of .4
 // so kv should be 10.0
 double BehaviorController::gVelKv = 10.0;  
@@ -38,7 +42,11 @@ double BehaviorController::KCohesion = 1.0;
 
 const double M2_PI = M_PI * 2.0;
 static const double M_PI_O2 = M_PI/2.0;
-
+void  BehaviorController::updateTimeConstant()
+{
+	gOriKp = AngularFreq * AngularFreq;
+	gOriKv = 2 * dampingRatio * AngularFreq;
+}
 BehaviorController::BehaviorController() 
 {
 	m_state.resize(m_stateDim);
@@ -58,8 +66,9 @@ BehaviorController::BehaviorController()
 	m_Active = true; 
 	mpActiveBehavior = NULL;
 	mLeader = false;
-
+        updateTimeConstant();
 	reset();
+
 }
 
 AActor* BehaviorController::getActor()
@@ -165,20 +174,23 @@ void BehaviorController::control(double deltaT)
 		//  where the values of the gains Kv and Kp are different for each controller
 
 		// TODO: insert your code here to compute m_force and m_torque
-		
 		vec3 forceWorld {gMass * gVelKv * ( m_Vdesired -  m_Vel0)};
 		// the minus sign gets you from world to body
-        	mat3 worldToBody { mat3::Rotation3D(vec3(0, 1, 0), -M_PI_O2 + m_state[ORI][_Y])};
+		mat3 worldToBody { mat3::Rotation3D(vec3(0, 1, 0), -M_PI_O2 + m_state[ORI][_Y])};
+		//mat3 worldToBody {m_Guide.getLocalRotation().Transpose()};
 		m_force = worldToBody * forceWorld;
 		// compute desiredAngle use the angle with respect to the x axis 
 		double thetad = atan2(m_Vdesired[_Z], m_Vdesired[_X]);
 		double anglediff = thetad - m_state[ORI][_Y];
 		ClampAngle(anglediff);
 		vec3 angleError(0, anglediff, 0);
-		m_torque = gInertia * (gOriKp * angleError - gOriKp * m_state[AVEL]);
-		if ( std::fabs (m_torque[_Y]) < 30.0 &&  (std::fabs(anglediff - M_PI_O2) < 0.001  || std::fabs(anglediff + M_PI_O2) < 0.001))
+		vec3 torque1 = gInertia * gOriKp * angleError;
+		vec3 torque2 = gInertia * gOriKv * m_state[AVEL];
+		m_torque = torque1 - torque2;
+		if ( std::fabs (m_torque[_Y]) < 10 &&  (std::fabs(anglediff - M_PI_O2) < 0.01  || std::fabs(anglediff + M_PI_O2) < 0.01))
 		{
-			m_torque -= gOriKp * m_state[AVEL];
+			m_torque = 2* torque1;
+			m_force *= 2;
 		}
 
 		// when agent desired agent velocity and actual velocity < 2.0 then stop moving
@@ -239,6 +251,7 @@ void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& cont
 	// this changes the conversions from body to world. Can use the prior rotation matrix. Theta B is
 	// stored in the state vectors.
     mat3 bodyToWorld { mat3::Rotation3D(vec3(0, 1, 0), M_PI_O2 - state[ORI][_Y])};
+     //mat3 bodyToWorld { m_Guide.getLocalRotation()};
 	// Compute the stateDot vector given the values of the current state vector and control input vector
 	stateDot[POS] = bodyToWorld * state[VEL];
 	stateDot[ORI] = state[AVEL];
@@ -289,7 +302,7 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	ClampAngle(m_state[ORI][_Y]);
 	//  Perform validation check to make sure all values are within MAX values
 	// max Velocity in the body frame
-	double speed2 = m_VelB.SqrLength();
+	double speed2 = m_state[VEL].SqrLength();
 	float factor;
 	if (speed2 > gMaxSpeed * gMaxSpeed) {
 		factor = gMaxSpeed /std::sqrt(speed2);
@@ -297,7 +310,7 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 		m_state[VEL] = m_VelB;
 	}
 	// max angular speed
-	speed2 = m_AVelB.SqrLength();
+	speed2 = m_state[AVEL].SqrLength();
 	if (speed2 > gMaxAngularSpeed * gMaxAngularSpeed)
 	{
 		factor = gMaxAngularSpeed/std::sqrt(speed2);

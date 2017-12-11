@@ -73,14 +73,13 @@ public:
 	virtual void act(double deltaT);
 
 	//given the state computes stateDot based on the agent system dynamics 
-	//this uses no private or state variables and could be declared static. 
-	//to 
-  	static void computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT);
+	//this uses only m_Guide to get the rotation matrix.
+  	void computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT);
 	
 	//updates Agent state
 	virtual void updateState(float deltaT, int integratorType);
 
-
+        static void updateTimeConstant();
 
 protected:
 	typedef std::map<BehaviorType, Behavior*> BehaviorMap;
@@ -164,6 +163,8 @@ public:
     static double gVelKv;  // Velocity Kv gain
 
     //Heading controller gains: torque = I * ( -Kv * thetaDot - Kp * theta + Kp * thetad)
+    static double dampingRatio;
+    static double AngularFreq;
     static double gOriKv;  // Orientation Kv gain
     static double gOriKp;  // Orientation Kp gain
 

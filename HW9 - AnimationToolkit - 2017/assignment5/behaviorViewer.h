@@ -42,13 +42,18 @@ protected:
     static void TW_CALL onSetBehaviorCb(const void *value, void *clientData);
     static void TW_CALL onGetBehaviorCb(void *value, void *clientData);
     static void TW_CALL onSetNumCharactersCb(const void *value, void *clientData);
-	static void TW_CALL onSetNumObstaclesCb(const void *value, void *clientData);
+    static void TW_CALL onSetNumObstaclesCb(const void *value, void *clientData);
     static void TW_CALL onGetNumCharactersCb(void *value, void *clientData);
-	static void TW_CALL onGetNumObstaclesCb(void *value, void *clientData);
-	static void TW_CALL onResetCb(void *clientData);
+    static void TW_CALL onGetNumObstaclesCb(void *value, void *clientData);
+   // static void TW_CALL onSetAngularFreqCb(const void *value, void *clientData);
+   // static void TW_CALL onGetAngularFreqCb(void *value, void *clientData);
+   // static void TW_CALL onGetDampingTimeConstantCb(void *value, void *clientData);
+   // static void TW_CALL onSetDampingTimeConstantCb(const void *value, void *clientData);
 
-
-	virtual void setActiveBehavior(BehaviorType type);
+    static void TW_CALL onResetCb(void *clientData);
+    static void TW_CALL onUpdateTimeConstantCb(void *clientData);
+    
+    virtual void setActiveBehavior(BehaviorType type);
     virtual void showObstacles(bool b) { m_ShowObstacles = b; }
 
 protected: 

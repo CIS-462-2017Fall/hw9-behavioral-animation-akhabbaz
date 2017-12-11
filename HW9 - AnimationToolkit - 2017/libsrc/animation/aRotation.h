@@ -26,6 +26,7 @@ public:
 
     // Constructors
     mat3();
+	// entries are row0, row1, row2
     mat3(const vec3& v0, const vec3& v1, const vec3& v2);
     mat3(double d);
     mat3(const mat3& m);
