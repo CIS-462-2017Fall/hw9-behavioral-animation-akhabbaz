@@ -176,7 +176,7 @@ void BehaviorController::control(double deltaT)
 		// TODO: insert your code here to compute m_force and m_torque
 		vec3 forceWorld {gMass * gVelKv * ( m_Vdesired -  m_Vel0)};
 		// the minus sign gets you from world to body
-		mat3 worldToBody { mat3::Rotation3D(vec3(0, 1, 0), -M_PI_O2 + m_state[ORI][_Y])};
+		mat3 worldToBody { mat3::Rotation3D(axisY, -M_PI_O2 + m_state[ORI][_Y])};
 		//mat3 worldToBody {m_Guide.getLocalRotation().Transpose()};
 		m_force = worldToBody * forceWorld;
 		// compute desiredAngle use the angle with respect to the x axis 
@@ -250,11 +250,12 @@ void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& cont
 	// the angle used in the body frame is with respect to the xaxis, theta B = pi/2 - thetaworld.
 	// this changes the conversions from body to world. Can use the prior rotation matrix. Theta B is
 	// stored in the state vectors.
-    mat3 bodyToWorld { mat3::Rotation3D(vec3(0, 1, 0), M_PI_O2 - state[ORI][_Y])};
+    mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - state[ORI][_Y])};
      //mat3 bodyToWorld { m_Guide.getLocalRotation()};
 	// Compute the stateDot vector given the values of the current state vector and control input vector
 	stateDot[POS] = bodyToWorld * state[VEL];
 	stateDot[ORI] = state[AVEL];
+	double y = stateDot[ORI][0];
 	// add in the Coriolis force to get the body velocities correct
        //	stateDot[VEL] = force/gMass - state[AVEL].Cross(state[VEL]); 
 	stateDot[VEL] = force/gMass;
@@ -346,8 +347,10 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	vec3 up(0.0, 1.0, 0.0);
 	vec3 right = up.Cross(dir);
 	right.Normalize();
-	mat3 rot(right, up, dir);
-	m_Guide.setLocalRotation(rot.Transpose());
+///	mat3 rot(right, up, dir);
+//	rot = rot.Transpose();
+        mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - m_state[ORI][_Y])};
+	m_Guide.setLocalRotation(bodyToWorld);
 	m_Guide.setLocalTranslation(m_Guide.getLocalTranslation() + m_Vel0*deltaT);
 
 }
