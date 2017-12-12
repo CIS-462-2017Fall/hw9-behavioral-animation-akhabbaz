@@ -357,17 +357,18 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	// there are two ways to get the orientation: use the current angle or use 
 	// the direction or the velocity vector.  These two are about the same
 	// but I think in cases of difference, the angle is better.
-	dir.Normalize();
-	vec3 up(0.0, 1.0, 0.0);
-	vec3 right = up.Cross(dir);
-	right.Normalize();
-	mat3 rot(right, up, dir);
-	rot = rot.Transpose();
-	mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - m_state[ORI][_Y])};
-	vec3 diff{ rot.GetRow(0) - bodyToWorld.GetRow(0) };
-	double l{ diff.SqrLength() };
+	//dir.Normalize();
+	//vec3 up(0.0, 1.0, 0.0);
+	//vec3 right = up.Cross(dir);
+	//right.Normalize();
+	//mat3 rot(right, up, dir);
+	//rot = rot.Transpose();
+	//vec3 diff{ rot.GetRow(0) - bodyToWorld.GetRow(0) };
+	//double l{ diff.SqrLength() };
 	//assert(l < .3);
-	m_Guide.setLocalRotation(rot);
+	//m_Guide.setLocalRotation(rot);
+	mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - m_state[ORI][_Y])};
+	m_Guide.setLocalRotation(bodyToWorld);
 	m_Guide.setLocalTranslation(m_Guide.getLocalTranslation() + m_Vel0*deltaT);
 
 }
