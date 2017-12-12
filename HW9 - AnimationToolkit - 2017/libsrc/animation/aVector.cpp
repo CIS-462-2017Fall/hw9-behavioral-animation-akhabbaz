@@ -147,6 +147,14 @@ vec3 operator - (const vec3& a)
         a.n[VX]*b.n[VY] - a.n[VY]*b.n[VX]);
 }
 
+static bool equal(const double a, const double b, double tol)
+{
+	return std::fabs(a-b) < tol;
+}
+bool equal (const vec3& a, const vec3& b, double tol)
+{ 
+    return equal(a.n[VX], b.n[VX], tol) && equal(a.n[VY], b.n[VY], tol) && equal(a.n[VZ], b.n[VZ], tol);
+}
  int operator == (const vec3& a, const vec3& b)
 { 
     return (a.n[VX] == b.n[VX]) && (a.n[VY] == b.n[VY]) && (a.n[VZ] == b.n[VZ]);

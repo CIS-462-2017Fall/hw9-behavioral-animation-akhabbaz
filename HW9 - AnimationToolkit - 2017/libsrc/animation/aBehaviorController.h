@@ -37,9 +37,8 @@ public:
 	void setActor(AActor* actor); 
 	
 	void reset();
-    
-    void setActive(bool b) { m_Active = b; }  // sets agent BehaviorController to active
-    bool isActive()  { return m_Active; }
+	void setActive(bool b) { m_Active = b; }  // sets agent BehaviorController to active
+	bool isActive()  { return m_Active; }
 
 	//---------------------------
 

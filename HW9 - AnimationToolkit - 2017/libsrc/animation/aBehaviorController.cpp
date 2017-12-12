@@ -238,7 +238,8 @@ void BehaviorController::act(double deltaT)
 
 // compute dynamics for the no slip condition;  the torque is along the y axis, the force is in the zx plane
 // the force y is set in controlInput so that the centrifugal and coriolis forces cancel keeping vx body = 0;
-// this sates the state dot and the control input
+// this sates the state dot and the control input. 
+// 	This can change the controlInput in two conditions.  It adds a force to cancel the coriolis force
 void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& controlInput, vector<vec3>& stateDot, double deltaT)
 // Compute stateDot vector given the control input and state vectors
 //  This function sets derive vector to appropriate values after being called
@@ -256,8 +257,14 @@ void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& cont
 	stateDot[POS] = bodyToWorld * state[VEL];
 	stateDot[ORI] = state[AVEL];
 	double y = stateDot[ORI][0];
+	assert (std::fabs(y) < .001);
+	// if the actor is moving backwards set the force to zero
+	//  ( or possibly reverse the force so that it moves forward).
+	if (state[VEL][_Z] <= 0.0 && force[_Z] < 0) {
+		force[_Z] = 0;
+	}
 	// add in the Coriolis force to get the body velocities correct
-       //	stateDot[VEL] = force/gMass - state[AVEL].Cross(state[VEL]); 
+       //	stateDot[VEL] = force/gMass - state[AVEL].Cross(state[VEL]);
 	stateDot[VEL] = force/gMass;
 	vec3 CoriolisForce = state[AVEL].Cross(state[VEL]);
 	// enforce the no slip condition so that Vb x is zero
@@ -321,14 +328,18 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	// update the guide orientation
 	// compute direction from nonzero velocity vector
 	// In the end the torque is near zero and this stops
-	// wandering.  In the beginning the torque is big so 
-	// this won't stop the actor from starting.
+	// wandering.  if the velocity is too small, the current
+	// angle is a good proxy and is used to get the direction.
 	vec3 dir;
-	if (m_Vel0.Length() < 35.0 && m_vd < 35.0)
+	if (m_Vel0.Length() < 35.0)
 	{
-		dir = m_lastVel0;
-		dir.Normalize();;
-		m_state[ORI] = atan2(dir[_Z], dir[_X]);
+//		dir = m_lastVel0;
+//		dir.Normalize();;
+//		m_state[ORI] = atan2(dir[_Z], dir[_X]);
+//		The angle is solid but the direction based on the velocity
+//		is not.  Set the direction based on the angle.
+		double angle = m_state[ORI][_Y];
+		dir = vec3(cos(angle), 0, sin(angle));
 	}
 	else
 	{
@@ -343,14 +354,20 @@ void BehaviorController::updateState(float deltaT, int integratorType)
 	m_AVelB = m_state[AVEL];
 	// set the force in the x direction to enforce no slip
 	m_force = m_controlInput[0];
+	// there are two ways to get the orientation: use the current angle or use 
+	// the direction or the velocity vector.  These two are about the same
+	// but I think in cases of difference, the angle is better.
 	dir.Normalize();
 	vec3 up(0.0, 1.0, 0.0);
 	vec3 right = up.Cross(dir);
 	right.Normalize();
-///	mat3 rot(right, up, dir);
-//	rot = rot.Transpose();
-        mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - m_state[ORI][_Y])};
-	m_Guide.setLocalRotation(bodyToWorld);
+	mat3 rot(right, up, dir);
+	rot = rot.Transpose();
+	mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - m_state[ORI][_Y])};
+	vec3 diff{ rot.GetRow(0) - bodyToWorld.GetRow(0) };
+	double l{ diff.SqrLength() };
+	//assert(l < .3);
+	m_Guide.setLocalRotation(rot);
 	m_Guide.setLocalTranslation(m_Guide.getLocalTranslation() + m_Vel0*deltaT);
 
 }

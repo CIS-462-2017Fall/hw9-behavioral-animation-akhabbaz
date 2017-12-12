@@ -78,6 +78,8 @@ public:
      friend mat3 operator * (double d, const mat3& a);	    // 3.0 * m1
      friend mat3 operator / (const mat3& a, double d);	    // m1 / 3.0
      friend int operator == (const mat3& a, const mat3& b);	    // m1 == m2 ?
+     // all elements within TOL OF each other.
+     friend bool equal(const mat3& a, const mat3& b, double TOL);	    // m1 == m2 ?
      friend int operator != (const mat3& a, const mat3& b);	    // m1 != m2 ?
      friend void Swap(mat3& a, mat3& b);			    // swap m1 & m2
 

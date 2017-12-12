@@ -45,6 +45,8 @@ public:
     friend  vec3 operator / (const vec3& a, double d);	    // v1 / 3.0
     friend  vec3 operator ^ (const vec3& a, const vec3& b);	    // cross product
     friend  int operator == (const vec3& a, const vec3& b);	    // v1 == v2 ?
+    // equal within TOL of each other
+    friend  bool equal (const vec3& a, const vec3& b, double TOL);	    // v1 == v2 ?
     friend  int operator != (const vec3& a, const vec3& b);	    // v1 != v2 ?
 
     friend  void Swap(vec3& a, vec3& b);						// swap v1 & v2

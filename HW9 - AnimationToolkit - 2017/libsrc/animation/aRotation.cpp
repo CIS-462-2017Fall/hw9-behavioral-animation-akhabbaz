@@ -756,6 +756,11 @@ int operator == (const mat3& a, const mat3& b)
     return (a.mM[0] == b.mM[0]) && (a.mM[1] == b.mM[1]) && (a.mM[2] == b.mM[2]); 
 }
 
+
+bool equal (const mat3& a, const mat3& b, double tol)
+{ 
+    return equal(a.mM[0], b.mM[0], tol) && equal(a.mM[1], b.mM[1], tol) && equal(a.mM[2], b.mM[2], tol); 
+}
 int operator != (const mat3& a, const mat3& b)
 { 
     return !(a == b); 
