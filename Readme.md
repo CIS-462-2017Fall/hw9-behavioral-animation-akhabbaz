@@ -18,6 +18,14 @@ simple while loop that was easy to understand.
 
 Cohesion Alignment, Separation all work.  I found no issues.
 
-There are constants in the top of Behaviors.cpp that set the flocking and leader behaviors.
+There are constants in the top of Behaviors.cpp that set the flocking and leader behaviors
+
+The flocking and leading all work as suggested. To tune them, I put the coefficients in the GUI and adjusted them.
+The leader is pretty perfect and works with the parameters set.  Flocking works well too.  The leader will always end up near the target,
+but the others may not if they get separated from the leader.  They may find themselves paired up but with no leader and so those two will 
+stay together but won't joint the flock.  I think this is alright.
+
+I added one more behavior called Guided Avoid.  It currently has a weight of avoid and separation.  This way the actors avoid obstacles but 
+don't clump all up in the end.  One can see how this works very well.
 
 
