@@ -57,7 +57,7 @@ void BehaviorViewer::initializeGui()
 	TwDefine(" 'File controls' size='200 300' position='5 185' iconified=true fontresizable=false alpha=200");
 
 	m_TwBehaviorBar = TwNewBar("Behavior controls");
-	TwDefine(" 'Behavior controls' size='200 240' position='5 185' iconified=false fontresizable=false alpha=200");
+	TwDefine(" 'Behavior controls' size='200 260' position='5 185' iconified=false fontresizable=false alpha=200");
 	TwEnumVal beTypeEV[] = {
 		{ SEEK, "Seek" },
 		{ FLEE, "Flee" },
@@ -83,6 +83,11 @@ void BehaviorViewer::initializeGui()
 	TwAddVarRW(m_TwBehaviorBar, "AngularFreq", TW_TYPE_DOUBLE, &BehaviorController::AngularFreq,  "");
 	TwAddVarRW(m_TwBehaviorBar, "DampingRatio", TW_TYPE_DOUBLE, &BehaviorController::dampingRatio, ""); 
 	TwAddVarRW(m_TwBehaviorBar, "gVelKv", TW_TYPE_DOUBLE, &BehaviorController::gVelKv, "");
+    TwAddVarRW(m_TwBehaviorBar, "CSep", TW_TYPE_DOUBLE, &Flocking::CSep,  "");
+	TwAddVarRW(m_TwBehaviorBar, "CCoh", TW_TYPE_DOUBLE, &Flocking::Ccoh, ""); 
+	TwAddVarRW(m_TwBehaviorBar, "Calign", TW_TYPE_DOUBLE, &Flocking::Calign, "");
+	//TwAddVarRW(m_TwBehaviorBar, "Carrival", TW_TYPE_DOUBLE, &Leader::Carrival,  "");
+	//TwAddVarRW(m_TwBehaviorBar, "CSeparation", TW_TYPE_DOUBLE, &Leader::CSeparation, ""); 
 	TwAddVarRW(m_TwBehaviorBar, "Debug", TW_TYPE_BOOLCPP, &m_DebugDraw, "");
 	TwAddButton(m_TwBehaviorBar, "Reset", onResetCb, this, "");
 	TwAddButton(m_TwBehaviorBar, "UpdateFB", onUpdateTimeConstantCb , this, "");
