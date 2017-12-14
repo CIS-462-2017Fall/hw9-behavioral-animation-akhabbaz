@@ -12,7 +12,8 @@
 using namespace std;
 
 // Behavior Type is global
-enum BehaviorType { SEEK, FLEE, ARRIVAL, DEPARTURE, AVOID, WANDER, ALIGNMENT, SEPARATION, COHESION, FLOCKING, LEADER };
+enum BehaviorType { SEEK, FLEE, ARRIVAL, DEPARTURE, AVOID, WANDER, ALIGNMENT, SEPARATION, COHESION, FLOCKING, LEADER, 
+                    GUIDEDLEADER};
 
 // state vector indices
 #define POS  0
@@ -86,7 +87,8 @@ protected:
 	ASkeleton* m_pSkeleton;
 	AActor* m_pActor;
 
-	//enum BehaviorType { SEEK, FLEE, ARRIVAL, DEPARTURE, AVOID, WANDER, ALIGNMENT, SEPARATION, COHESION, FLOCKING, LEADER };
+	//enum BehaviorType { SEEK, FLEE, ARRIVAL, DEPARTURE, AVOID, WANDER, ALIGNMENT, SEPARATION, COHESION, FLOCKING, LEADER,
+	//                    GUIDEDLEADER};
 	BehaviorType m_BehaviorType;
 	BehaviorMap m_BehaviorList;  // maintains a list of behaviors available to agent
 

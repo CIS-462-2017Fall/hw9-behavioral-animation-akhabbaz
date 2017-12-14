@@ -103,6 +103,7 @@ void BehaviorController::createBehaviors(vector<AActor>& agentList, vector<Obsta
 	m_BehaviorList[LEADER] = new Leader(m_pBehaviorTarget, m_AgentList);
 	m_BehaviorList[FLOCKING] = new Flocking(m_pBehaviorTarget, m_AgentList);
 	m_BehaviorList[AVOID] = new Avoid(m_pBehaviorTarget, m_ObstacleList);
+	m_BehaviorList[GUIDEDLEADER] = new GuidedAvoid(m_pBehaviorTarget, m_AgentList);
 }
 
 BehaviorController::~BehaviorController()
