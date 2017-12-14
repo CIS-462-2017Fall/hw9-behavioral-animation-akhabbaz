@@ -35,7 +35,7 @@ double BehaviorController::KDeparture = 12000.0;
 double BehaviorController::KNoise = 15.0;
 double BehaviorController::KWander = 80.0;   
 double BehaviorController::KAvoid = 600.0;  
-double BehaviorController::TAvoid = 1000.0;   
+double BehaviorController::TAvoid = 1.0;   
 double BehaviorController::KSeparation = 12000.0; 
 double BehaviorController::KAlignment = 1.0;  
 double BehaviorController::KCohesion = 1.0;  
@@ -176,29 +176,33 @@ void BehaviorController::control(double deltaT)
 		// TODO: insert your code here to compute m_force and m_torque
 		vec3 forceWorld {gMass * gVelKv * ( m_Vdesired -  m_Vel0)};
 		// the minus sign gets you from world to body
-		mat3 worldToBody { mat3::Rotation3D(axisY, -M_PI_O2 + m_state[ORI][_Y])};
-		//mat3 worldToBody {m_Guide.getLocalRotation().Transpose()};
+		//mat3 worldToBody { mat3::Rotation3D(axisY, -M_PI_O2 + m_Euler[_Y])};
+		mat3 worldToBody {m_Guide.getLocalRotation().Transpose()};
 		m_force = worldToBody * forceWorld;
 		// compute desiredAngle use the angle with respect to the x axis 
 		double thetad = atan2(m_Vdesired[_Z], m_Vdesired[_X]);
-		double anglediff = thetad - m_state[ORI][_Y];
+		double anglediff = thetad - m_Euler[_Y];
 		ClampAngle(anglediff);
 		vec3 angleError(0, anglediff, 0);
 		vec3 torque1 = gInertia * gOriKp * angleError;
-		vec3 torque2 = gInertia * gOriKv * m_state[AVEL];
+		vec3 torque2 = gInertia * gOriKv * m_AVelB;
 		m_torque = torque1 - torque2;
-		if ( std::fabs (m_torque[_Y]) < 10 &&  (std::fabs(anglediff - M_PI_O2) < 0.01  || std::fabs(anglediff + M_PI_O2) < 0.01))
+		// if the force is small, then we are at our target-- turn the torque 
+		// controller into a first order controller with no angle feedback.
+		// With angle feedback, there is a zero torque solution with a constant
+		// angle error and a constant angular velocity.  This condition removes that 
+		// solution
+		if ( std::fabs (m_force[_Z]) < 10)
 		{
-			m_torque = 2* torque1;
-			m_force *= 2;
+			m_torque -= torque1;
 		}
 
 		// when agent desired agent velocity and actual velocity < 2.0 then stop moving
-		if (m_vd < 2.0 &&  m_state[VEL][_Z] < 2.0)
-		{
-			m_force[2] = 0.0;
-			m_torque[1] = 0.0;
-		}
+	//	if (m_vd < 2.0 &&  m_state[VEL][_Z] < 2.0)
+	//	{
+	//	//	m_force[2] = 0.0;
+	//	//	m_torque[1] = 0.0;
+	//	}
 	}
 	else
 	{
@@ -207,19 +211,14 @@ void BehaviorController::control(double deltaT)
 	}
         // limit forces
 	// maxForce;
-	double inputsq = m_force.SqrLength();
-	double factor;
-	if (inputsq > gMaxForce * gMaxForce)
+	if (m_force[_Z] > gMaxForce)
 	{
-		factor = gMaxForce/std::sqrt(inputsq);
-		m_force *= factor;
+		m_force[_Z] = gMaxForce;
 	}
 	// maxTorque
-	inputsq = m_torque.SqrLength();
-	if (inputsq > gMaxTorque * gMaxTorque)
+	if (m_torque[_Y] > gMaxTorque)
 	{
-		factor = gMaxTorque/std::sqrt(inputsq);
-		m_torque *= factor;
+		m_torque[_Y] = gMaxTorque;
 	}
 
 	// set control inputs to current force and torque values
@@ -251,8 +250,8 @@ void BehaviorController::computeDynamics(vector<vec3>& state, vector<vec3>& cont
 	// the angle used in the body frame is with respect to the xaxis, theta B = pi/2 - thetaworld.
 	// this changes the conversions from body to world. Can use the prior rotation matrix. Theta B is
 	// stored in the state vectors.
-    mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - state[ORI][_Y])};
-     //mat3 bodyToWorld { m_Guide.getLocalRotation()};
+    //mat3 bodyToWorld { mat3::Rotation3D(axisY, M_PI_O2 - state[ORI][_Y])};
+    mat3 bodyToWorld { m_Guide.getLocalRotation()};
 	// Compute the stateDot vector given the values of the current state vector and control input vector
 	stateDot[POS] = bodyToWorld * state[VEL];
 	stateDot[ORI] = state[AVEL];
